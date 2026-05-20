@@ -64,6 +64,7 @@ class Guard extends Enemy {
 
         player.destroy();
         this.playerDestroyed = true;
+        this.gameEnv.gameControl.currentLevel.restart = true;  // Trigger level restart
     }
 }
 

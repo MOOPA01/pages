@@ -1,36 +1,31 @@
-console.log("heistMusic.js loaded");
-
+console.log("heistMusic.js loaded from _projects/PeppaPigGame/levels");
 class heistMusic {
   constructor() {
-    this.player = null;
+    this.audio = null;
     this.started = false;
     this.isPlaying = false;
-    this.videoId = 'wZe-_boTWMk';
-    this.loopEnd = 58;
-    this.loopInterval = null;
+ 
+    // Rotate through several search terms so the vibe stays fresh across sessions
+    const queries = [
+      'dark ambient instrumental',
+      'eerie atmospheric instrumental',
+      'mysterious cinematic instrumental',
+      'haunting piano instrumental',
+      'gothic ambient instrumental',
+    ];
+    const picked = queries[Math.floor(Math.random() * queries.length)];
+    this.endpoint =
+      `https://itunes.apple.com/search?term=${encodeURIComponent(picked)}&entity=song&limit=25`;
+ 
     this.userActivated = false;
     this.activateFromUserGesture = this.activateFromUserGesture.bind(this);
-    this.loadYouTubeAPI();
     this.createToggleButton();
   }
-
-  loadYouTubeAPI() {
-    if (document.getElementById('yt-iframe-api')) return;
-    const tag = document.createElement('script');
-    tag.id = 'yt-iframe-api';
-    tag.src = 'https://www.youtube.com/iframe_api';
-    document.head.appendChild(tag);
-    const prev = window.onYouTubeIframeAPIReady;
-    window.onYouTubeIframeAPIReady = () => {
-      if (prev) prev();
-      if (this.userActivated && !this.started) this.startMusic();
-    };
-  }
-
+ 
   createToggleButton() {
     const btn = document.createElement('button');
-    btn.id = 'heist-music-toggle';
-    btn.innerHTML = 'Music';
+    btn.id = 'peppa-music-toggle';
+    btn.innerHTML = '🔇 Music';
     btn.style.cssText = `
       position: fixed;
       top: 10px;
@@ -39,122 +34,117 @@ class heistMusic {
       padding: 8px 16px;
       font-size: 14px;
       font-family: sans-serif;
-      background: #ff6b9d;
-      color: white;
+      background: #3a2a4d;
+      color: #c9b8e8;
       border: none;
       border-radius: 20px;
       cursor: pointer;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
     `;
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       this.toggleMusic();
     });
-
-    const container = document.createElement('div');
-    container.id = 'heist-yt-player';
-    container.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;bottom:0;left:0;';
-
-    document.body.appendChild(container);
     document.body.appendChild(btn);
     this.toggleBtn = btn;
   }
-
-  startMusic() {
+ 
+  async fetchPreviewUrl() {
+    const response = await fetch(this.endpoint);
+    if (!response.ok) {
+      throw new Error('API request failed (' + response.status + ')');
+    }
+    const data = await response.json();
+    const tracks = (data && Array.isArray(data.results)) ? data.results : [];
+ 
+    // Collect all tracks that have a preview and are likely instrumental:
+    // filter out anything whose trackName or artistName hints at lyrics/vocals.
+    const VOCAL_HINTS = /\b(feat|ft\.|vocal|voice|singer|rap|hip.?hop|pop|remix)\b/i;
+    const candidates = tracks.filter((item) => {
+      if (!item || !item.previewUrl) return false;
+      const name = (item.trackName || '') + ' ' + (item.artistName || '');
+      return !VOCAL_HINTS.test(name);
+    });
+ 
+    // Fall back to any track with a previewUrl if the filter removed everything
+    const pool = candidates.length > 0 ? candidates : tracks.filter(t => t && t.previewUrl);
+ 
+    if (pool.length === 0) {
+      throw new Error('No playable preview URL found in API response');
+    }
+ 
+    // Pick randomly so repeated sessions feel different
+    const chosen = pool[Math.floor(Math.random() * pool.length)];
+    console.log(`Background music: "${chosen.trackName}" by ${chosen.artistName}`);
+    return chosen.previewUrl;
+  }
+ 
+  async startMusic() {
     if (this.started || !this.userActivated) return;
-    if (!window.YT || !window.YT.Player) return; // API not ready yet; onYouTubeIframeAPIReady will retry
     try {
-      this.player = new window.YT.Player('heist-yt-player', {
-        height: '1',
-        width: '1',
-        videoId: this.videoId,
-        playerVars: { autoplay: 1, controls: 0, disablekb: 1, fs: 0, iv_load_policy: 3, modestbranding: 1, rel: 0 },
-        events: {
-          onReady: (event) => {
-            event.target.setVolume(35);
-            event.target.playVideo();
-            this.started = true;
-            this.isPlaying = true;
-            this.removeGestureListeners();
-            this.updateButton();
-            this.startLoopWatcher();
-          },
-          onError: (event) => {
-            console.warn('heistMusic: player error', event.data);
-          },
-        },
-      });
-    } catch (error) {
-      console.warn('heistMusic: Failed to start music', error);
-    }
-  }
-
-  startLoopWatcher() {
-    this.stopLoopWatcher();
-    this.loopInterval = setInterval(() => {
-      if (!this.player || !this.isPlaying) return;
-      if (this.player.getCurrentTime() >= this.loopEnd) {
-        this.player.seekTo(0, true);
-        this.player.playVideo();
-      }
-    }, 500);
-  }
-
-  stopLoopWatcher() {
-    if (this.loopInterval !== null) {
-      clearInterval(this.loopInterval);
-      this.loopInterval = null;
-    }
-  }
-
-  stopMusic() {
-    if (this.player) {
-      this.player.pauseVideo();
-      this.player.seekTo(0, true);
-      this.isPlaying = false;
-      this.stopLoopWatcher();
+      const previewUrl = await this.fetchPreviewUrl();
+      this.audio = new Audio(previewUrl);
+      this.audio.volume = 0.3;
+      this.audio.loop = true;
+      await this.audio.play();
+      this.started = true;
+      this.isPlaying = true;
+      this.removeGestureListeners();
       this.updateButton();
+      console.log('Background music: playback started');
+    } catch (error) {
+      console.warn('Background music: failed to start', error);
     }
   }
-
-  toggleMusic() {
+ 
+  stopMusic() {
+    if (this.audio) {
+      this.audio.pause();
+      this.audio.currentTime = 0;
+      this.isPlaying = false;
+      this.updateButton();
+      console.log('Background music: playback stopped');
+    }
+  }
+ 
+  async toggleMusic() {
     if (!this.started) {
       this.userActivated = true;
-      this.startMusic();
+      await this.startMusic();
     } else if (this.isPlaying) {
       this.stopMusic();
     } else {
-      if (this.player) {
-        this.player.playVideo();
+      if (this.audio) {
+        await this.audio.play();
         this.isPlaying = true;
-        this.startLoopWatcher();
         this.updateButton();
+        console.log('Background music: playback resumed');
       }
     }
   }
-
+ 
   updateButton() {
     if (this.toggleBtn) {
-      this.toggleBtn.innerHTML = this.isPlaying ? 'Music On' : 'Music Off';
+      this.toggleBtn.innerHTML = this.isPlaying ? '🔊 Music' : '🔇 Music';
     }
   }
-
-  activateFromUserGesture() {
+ 
+  activateFromUserGesture = async () => {
     this.userActivated = true;
-    this.startMusic();
+    await this.startMusic();
   }
-
+ 
   addGestureListeners() {
     window.addEventListener('click', this.activateFromUserGesture, { once: true });
     window.addEventListener('keydown', this.activateFromUserGesture, { once: true });
     window.addEventListener('touchstart', this.activateFromUserGesture, { once: true });
   }
-
+ 
   removeGestureListeners() {
     window.removeEventListener('click', this.activateFromUserGesture);
     window.removeEventListener('keydown', this.activateFromUserGesture);
     window.removeEventListener('touchstart', this.activateFromUserGesture);
   }
 }
-
+ 
 export default heistMusic;

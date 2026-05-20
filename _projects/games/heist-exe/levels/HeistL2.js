@@ -3,12 +3,14 @@ import Player from '@assets/js/GameEnginev1.1/essentials/Player.js';
 import Npc from '@assets/js/GameEnginev1.1/essentials/Npc.js';
 import GameControl from '@assets/js/GameEnginev1.1/essentials/GameControl.js';
 import Gem from '@assets/js/projects/heist-exe/levels/Gem.js';
-//import heistMusic from '@assets/js/heist-exe/heistMusic';
+import heistMusic from '@assets/js/heist-exe/heistMusic.js';
 import Barrier from '@assets/js/GameEnginev1.1/essentials/Barrier.js';
 import Guard from '@assets/js/projects/heist-exe/levels/Guard.js';
+
 class HeistL2 {
   constructor(gameEnv) {    
     this.gameEnv = gameEnv;
+    this.music = new heistMusic();
 
     let width = gameEnv.innerWidth;
     let height = gameEnv.innerHeight;
@@ -28,7 +30,7 @@ class HeistL2 {
         STEP_FACTOR: 1000,
         ANIMATION_RATE: 50,
         INIT_POSITION: { x: 0, y: 200 }, 
-        pixels: { height: 532, width: 400 },        // total spritesheet size, not per-frame
+        pixels: { height: 532, width: 400 },
         orientation: { rows: 4, columns: 4 },
         up:        { row: 3, start: 0, columns: 4 },
         upLeft:    { row: 1, start: 0, columns: 4, mirror: true, rotate: -Math.PI/16 },
@@ -50,7 +52,7 @@ class HeistL2 {
         STEP_FACTOR: 1000,
         ANIMATION_RATE: 50,
         INIT_POSITION: { x: 220, y: 300 }, 
-        pixels: { height: 532, width: 400 },        // total spritesheet size, not per-frame
+        pixels: { height: 532, width: 400 },
         orientation: { rows: 4, columns: 4 },
         up:        { row: 3, start: 0, columns: 4 },
         upLeft:    { row: 1, start: 0, columns: 4, mirror: true, rotate: -Math.PI/16 },
@@ -71,7 +73,7 @@ class HeistL2 {
         STEP_FACTOR: 1000,
         ANIMATION_RATE: 50,
         INIT_POSITION: { x: 520, y: 300 }, 
-        pixels: { height: 532, width: 400 },        // total spritesheet size, not per-frame
+        pixels: { height: 532, width: 400 },
         orientation: { rows: 4, columns: 4 },
         up:        { row: 3, start: 0, columns: 4 },
         upLeft:    { row: 1, start: 0, columns: 4, mirror: true, rotate: -Math.PI/16 },
@@ -187,7 +189,6 @@ class HeistL2 {
         visible: true,
         hitbox: { widthPercentage: 0.0, heightPercentage: 0.0 }
     }
-
 
     const gem_data_1 = {
         id: 'gem1',
