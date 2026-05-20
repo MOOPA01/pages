@@ -1,7 +1,7 @@
 ---
 layout: opencs
 title: Tower Defense
-permalink: /gamify/towerdefense
+permalink: /gamify/towerdefense/
 ---
 
 <div id="gameContainer">
